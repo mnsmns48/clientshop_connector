@@ -25,12 +25,12 @@ class DbSessions:
                                   f'{secret.local_database}')
         self.local_engine = create_engine(self.local_engine_line)
         self.local = sessionmaker(bind=self.local_engine)
-        self.tunnel = create_ssh_tunnel()
+        tunnel = create_ssh_tunnel()
         self.ssh_engine_line = (f'postgresql+psycopg2://'
                                 f'{secret.ssh_db_username}:'
                                 f'{secret.ssh_db_password}@'
                                 f'{secret.ssh_db_host}:'
-                                f'{self.tunnel.local_bind_port}/'
+                                f'{tunnel.local_bind_port}/'
                                 f'{secret.ssh_database}')
         self.ssh_engine = create_engine(self.ssh_engine_line)
         self.ssh = sessionmaker(self.ssh_engine)
