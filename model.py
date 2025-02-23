@@ -11,7 +11,7 @@ class Base(DeclarativeBase):
         return cls.__name__.lower()
 
 
-class StockTable3(Base):
+class StockTable(Base):
     code: Mapped[int] = mapped_column(primary_key=True)
     parent: Mapped[int]
     ispath: Mapped[bool]
@@ -20,7 +20,7 @@ class StockTable3(Base):
     price: Mapped[int] = mapped_column(nullable=True)
 
 
-class Activity3(Base):
+class Activity(Base):
     operation_code: Mapped[int] = mapped_column(primary_key=True)
     time_: Mapped[TIMESTAMP] = mapped_column(DateTime(timezone=False))
     product_code: Mapped[int]

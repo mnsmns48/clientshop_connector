@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from environs import Env
-from sshtunnel import SSHTunnelForwarder
 
 
 @dataclass
@@ -24,7 +23,7 @@ class Environs:
     local_db_password: str
 
 
-def load_environs(path: str = None):
+def load_environs(path: str):
     env_data = Env()
     env_data.read_env()
     return Environs(
@@ -49,13 +48,3 @@ def load_environs(path: str = None):
 
 
 env = load_environs('..env')
-
-
-def create_ssh_tunnel() -> SSHTunnelForwarder:
-    tunnel = SSHTunnelForwarder(
-        ssh_address_or_host=(env.ssh_host, env.ssh_port),
-        ssh_username=env.ssh_username,
-        ssh_password=env.ssh_password,
-        remote_bind_address=(env.ssh_db_host, env.ssh_db_port))
-    tunnel.start()
-    return tunnel
