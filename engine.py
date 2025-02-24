@@ -1,3 +1,4 @@
+import fdb
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sshtunnel import SSHTunnelForwarder
@@ -34,3 +35,5 @@ class DbSessions:
                                 f'{secret.ssh_database}')
         self.ssh_engine = create_engine(self.ssh_engine_line)
         self.ssh = sessionmaker(self.ssh_engine)
+
+fdb_connection = fdb.connect(dsn=env.fdb_dsn, user=env.fdb_user, password=env.fdb_password)
