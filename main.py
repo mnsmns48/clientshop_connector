@@ -2,13 +2,11 @@ import time
 import signal
 from contextlib import contextmanager
 
-from sqlalchemy.orm import Session
-
 from engine import DbSessions
 from env_config import env
 from firebird_func import firebird_data, get_fdb_activity
-from model import StockTable
-from posgres_func import truncate_table, upload_data, get_client_activity
+from model import StockTable, Activity, Base
+from posgres_func import truncate_table, upload_data, get_client_activity, update_data
 
 
 @contextmanager
@@ -22,7 +20,7 @@ def managed_sessions(sessions):
         ssh_session.close()
 
 
-def refresh_table_data(sessions: DbSessions):
+def refresh_table_data(sessions: DbSessions) -> bool:
     from_firebird: list = firebird_data()
     print('Данные из Firebird получены')
     for session_factory in [sessions.local, sessions.ssh]:
@@ -30,35 +28,47 @@ def refresh_table_data(sessions: DbSessions):
             truncate_table(session=session, table=StockTable.__table__)
             upload_data(session=session, table=StockTable, data=from_firebird)
     print('Таблицы наличия обновлены')
+    result = bool()
+    return result
 
 
-def ciclyc_update(time_cycle: int, sessions: DbSessions):
+def ciclyc_update(time_cycle: int, sessions: DbSessions, already_refreshed: bool):
+    print('Ожидаю продажи')
+
     def signal_handler(sig, frame):
-        print('сработал signal')
         raise SystemExit
+
+    def sale_info(sale_data: list) -> str:
+        result = str()
+        for sale in sale_data:
+            result += f"{sale['product']} {sale['quantity']}шт {sale['sum_']} ₽ {'-С-' if sale['noncash'] else ''}\n"
+        return result
 
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
     with managed_sessions(sessions) as (local_session, ssh_session):
         while True:
-            data_client = get_client_activity(session=local_session)
+            data_client = get_client_activity(session=ssh_session)
             fdb_activity = get_fdb_activity()
             difference = len(fdb_activity) - len(data_client)
-            print(difference)
             if difference:
                 inserted_data = fdb_activity[-difference:]
-
-
-            print(data_client)
+                upload_data(session=ssh_session, table=Activity, data=inserted_data)
+                upload_data(session=local_session, table=Activity, data=inserted_data)
+                print('Продажа:', sale_info(inserted_data))
+                if not already_refreshed:
+                    update_data(session=ssh_session, table=StockTable, data=inserted_data)
+                    update_data(session=ssh_session, table=StockTable, data=inserted_data)
+            already_refreshed = False
             time.sleep(time_cycle)
 
 
 def main():
     sessions = DbSessions(secret=env)
-    # Base.metadata.create_all(sessions.local_engine)
-    # Base.metadata.create_all(sessions.ssh_engine)
-    # refresh_table_data(sessions=sessions)
-    ciclyc_update(time_cycle=60, sessions=sessions)
+    Base.metadata.create_all(sessions.local_engine)
+    Base.metadata.create_all(sessions.ssh_engine)
+    refreshed = refresh_table_data(sessions=sessions)
+    ciclyc_update(time_cycle=60, sessions=sessions, already_refreshed=refreshed)
 
 
 if __name__ == '__main__':
