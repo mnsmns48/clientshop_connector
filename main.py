@@ -1,5 +1,6 @@
 import time
 import signal
+from contextlib import contextmanager
 
 from sqlalchemy.orm import Session
 
@@ -10,8 +11,15 @@ from model import StockTable
 from posgres_func import truncate_table, upload_data, get_client_activity
 
 
-
-
+@contextmanager
+def managed_sessions(sessions):
+    local_session = sessions.local()
+    ssh_session = sessions.ssh()
+    try:
+        yield local_session, ssh_session
+    finally:
+        local_session.close()
+        ssh_session.close()
 
 
 def refresh_table_data(sessions: DbSessions):
@@ -27,19 +35,19 @@ def refresh_table_data(sessions: DbSessions):
 def ciclyc_update(time_cycle: int, sessions: DbSessions):
     def signal_handler(sig, frame):
         print('сработал signal')
-    signal.signal(signal.SIGINT, signal_handler)
-    with sessions.local() as local_session, sessions.ssh() as ssh_session:
-        while True:
+        raise SystemExit
 
+    signal.signal(signal.SIGINT, signal_handler)
+    with managed_sessions(sessions) as (local_session, ssh_session):
+        while True:
             data_client = get_client_activity(session=local_session)
             fdb_activity = get_fdb_activity()
             difference = len(fdb_activity) - len(data_client)
             print(difference)
-            if difference:
-                inserted_data = fdb_activity[-difference:]
+            # if difference:
+            #     inserted_data = fdb_activity[-difference:]
+            print(data_client)
             time.sleep(time_cycle)
-
-# (opened_sessions=[local_session, ssh_session])
 
 
 def main():
@@ -52,4 +60,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
