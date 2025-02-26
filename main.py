@@ -1,10 +1,17 @@
 import time
+import signal
+
+from sqlalchemy.orm import Session
 
 from engine import DbSessions
 from env_config import env
 from firebird_func import firebird_data, get_fdb_activity
 from model import StockTable
 from posgres_func import truncate_table, upload_data, get_client_activity
+
+
+
+
 
 
 def refresh_table_data(sessions: DbSessions):
@@ -18,15 +25,21 @@ def refresh_table_data(sessions: DbSessions):
 
 
 def ciclyc_update(time_cycle: int, sessions: DbSessions):
-    with sessions.local() as local_session:
-        with sessions.ssh() as ssh_session:
-            while True:
-                data_client = get_client_activity(session=local_session)
-                fdb_activity = get_fdb_activity()
-                difference = len(fdb_activity) - len(data_client)
-                if difference:
-                    inserted_data = fdb_activity[-difference:]
-                time.sleep(time_cycle)
+    def signal_handler(sig, frame):
+        print('сработал signal')
+    signal.signal(signal.SIGINT, signal_handler)
+    with sessions.local() as local_session, sessions.ssh() as ssh_session:
+        while True:
+
+            data_client = get_client_activity(session=local_session)
+            fdb_activity = get_fdb_activity()
+            difference = len(fdb_activity) - len(data_client)
+            print(difference)
+            if difference:
+                inserted_data = fdb_activity[-difference:]
+            time.sleep(time_cycle)
+
+# (opened_sessions=[local_session, ssh_session])
 
 
 def main():
@@ -39,3 +52,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
