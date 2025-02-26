@@ -38,14 +38,17 @@ def ciclyc_update(time_cycle: int, sessions: DbSessions):
         raise SystemExit
 
     signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
     with managed_sessions(sessions) as (local_session, ssh_session):
         while True:
             data_client = get_client_activity(session=local_session)
             fdb_activity = get_fdb_activity()
             difference = len(fdb_activity) - len(data_client)
             print(difference)
-            # if difference:
-            #     inserted_data = fdb_activity[-difference:]
+            if difference:
+                inserted_data = fdb_activity[-difference:]
+
+
             print(data_client)
             time.sleep(time_cycle)
 
