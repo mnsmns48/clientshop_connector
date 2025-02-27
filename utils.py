@@ -1,14 +1,16 @@
 import requests
 
 
-def notify_via_telegram(bot: str, chat: int, sale_data: list) -> bool:
+def notify_via_telegram(bot: str, chat: int, sale_data: list, current_qty: dict) -> bool:
     text = str()
     for sale in sale_data:
-        text += (f"{'Возврат: ' if sale['return_'] else 'Продажа: '} "
+        text += (f"{'Возврат: ' if sale['return_'] else 'Продажа:'} "
                  f"{sale['product']} "
                  f"{sale['quantity']} шт "
                  f"{int(sale['sum_'])} ₽ "
-                 f"{'-С-' if sale['noncash'] else ''}\n")
+                 f"{'-С-' if sale['noncash'] else ''} ")
+        if current_qty.get(sale['product_code']):
+            text += f": {current_qty.get(sale['product_code'])}\n"
     print(text)
     url = f'https://api.telegram.org/bot{bot}/sendMessage'
     context = {'chat_id': str(chat), 'text': text}

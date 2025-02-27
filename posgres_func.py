@@ -32,19 +32,25 @@ def get_client_activity(session: Session) -> Sequence[Row[Any]]:
 
 
 @retry(BaseSSHTunnelForwarderError, tries=5000, delay=30)
-def update_data(session: Session, table: Type[StockTable], data: list):
-    temp_data = dict()
+def update_data(session: Session, table: Type[StockTable], data: list) -> dict:
+    result = dict()
+    data_qty = dict()
     for line in data:
-        temp_data.update({line['product_code']: int(line['quantity'])})
-    response = session.execute(select(table).filter(table.code.in_(temp_data.keys()))).scalars().all()
+        data_qty.update({line['product_code']: int(line['quantity'])})
+    response = session.execute(select(table).filter(table.code.in_(data_qty.keys()))).scalars().all()
     for line in response:
-        current_amount = line.quantity
+        current_amount = line.quantity - data_qty[line.code]
         if current_amount == 0:
             session.execute(delete(table).where(table.code == line.code))
             session.commit()
             print(f"Удаляю проданную позицию из наличия: {line.code} {line.name}")
+            if response:
+                result[line.code] = 0
         else:
             session.execute(update(table).where(table.code == line.code).values(quantity=current_amount))
             session.commit()
             print(f"Меняю количество товара на сайте:\n"
-                  f"{line.name}\nБыло {current_amount + temp_data[line.code]} шт. -> стало {current_amount} шт.\n")
+                  f"{line.name}\nБыло {current_amount + data_qty[line.code]} шт. -> стало {current_amount} шт.\n")
+            if response:
+                result[line.code] = current_amount
+    return result

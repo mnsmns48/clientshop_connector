@@ -50,10 +50,13 @@ def ciclyc_update(time_cycle: int, sessions: DbSessions, already_refreshed: bool
                 inserted_data = fdb_activity[-difference:]
                 upload_data(session=ssh_session, table=Activity, data=inserted_data)
                 upload_data(session=local_session, table=Activity, data=inserted_data)
-                notify_via_telegram(bot=env.tg_bot, chat=env.chat_id, sale_data=inserted_data)
                 if not already_refreshed:
                     update_data(session=ssh_session, table=StockTable, data=inserted_data)
-                    update_data(session=ssh_session, table=StockTable, data=inserted_data)
+                    current_qty: dict = update_data(session=local_session, table=StockTable, data=inserted_data)
+                    notify_via_telegram(bot=env.tg_bot,
+                                        chat=env.chat_id,
+                                        sale_data=inserted_data,
+                                        current_qty = current_qty)
             already_refreshed = False
             time.sleep(time_cycle)
 
