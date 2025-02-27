@@ -2,25 +2,14 @@ import sys
 import time
 import signal
 import traceback
-from contextlib import contextmanager
 
 from engine import DbSessions
 from env_config import env
 from firebird_func import firebird_data, get_fdb_activity
 from model import StockTable, Activity, Base
 from posgres_func import truncate_table, upload_data, get_client_activity, update_data
-from utils import notify_via_telegram
-
-
-@contextmanager
-def managed_sessions(sessions):
-    local_session = sessions.local()
-    ssh_session = sessions.ssh()
-    try:
-        yield local_session, ssh_session
-    finally:
-        local_session.close()
-        ssh_session.close()
+from temp_fdb import fdbdata
+from utils import notify_via_telegram, managed_sessions
 
 
 def refresh_table_data(sessions: DbSessions) -> bool:
@@ -31,8 +20,7 @@ def refresh_table_data(sessions: DbSessions) -> bool:
             truncate_table(session=session, table=StockTable.__table__)
             upload_data(session=session, table=StockTable, data=from_firebird)
     print('Таблицы наличия обновлены')
-    result = bool()
-    return result
+    return True
 
 
 def ciclyc_update(time_cycle: int, sessions: DbSessions, already_refreshed: bool):
@@ -58,7 +46,7 @@ def ciclyc_update(time_cycle: int, sessions: DbSessions, already_refreshed: bool
                     notify_via_telegram(bot=env.tg_bot,
                                         chat=env.chat_id,
                                         sale_data=inserted_data,
-                                        current_qty = current_qty)
+                                        current_qty=current_qty)
             already_refreshed = False
             time.sleep(time_cycle)
 
@@ -66,11 +54,11 @@ def ciclyc_update(time_cycle: int, sessions: DbSessions, already_refreshed: bool
 def main():
     print('start')
     sessions = DbSessions(secret=env)
-    Base.metadata.create_all(sessions.local_engine)
-    Base.metadata.create_all(sessions.ssh_engine)
+    # Base.metadata.create_all(sessions.local_engine)
+    # Base.metadata.create_all(sessions.ssh_engine)
     refreshed = refresh_table_data(sessions=sessions)
-
-    ciclyc_update(time_cycle=60, sessions=sessions, already_refreshed=refreshed)
+    # addon_desc()
+    # ciclyc_update(time_cycle=60, sessions=sessions, already_refreshed=refreshed)
 
 
 if __name__ == '__main__':

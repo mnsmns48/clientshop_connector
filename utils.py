@@ -1,4 +1,17 @@
+from contextlib import contextmanager
+
 import requests
+
+
+@contextmanager
+def managed_sessions(sessions):
+    local_session = sessions.local()
+    ssh_session = sessions.ssh()
+    try:
+        yield local_session, ssh_session
+    finally:
+        local_session.close()
+        ssh_session.close()
 
 
 def notify_via_telegram(bot: str, chat: int, sale_data: list, current_qty: dict) -> bool:
