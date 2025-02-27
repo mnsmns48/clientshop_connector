@@ -4,7 +4,7 @@ from typing import Type, Any, Sequence, Literal
 from retry import retry
 from sqlalchemy import text, FromClause, func, select, Row, delete, update
 from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy.orm import Session, DeclarativeBase
+from sqlalchemy.orm import Session
 from sshtunnel import BaseSSHTunnelForwarderError
 
 from model import StockTable, Activity, Base

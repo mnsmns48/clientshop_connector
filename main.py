@@ -1,5 +1,7 @@
+import sys
 import time
 import signal
+import traceback
 from contextlib import contextmanager
 
 from engine import DbSessions
@@ -62,6 +64,7 @@ def ciclyc_update(time_cycle: int, sessions: DbSessions, already_refreshed: bool
 
 
 def main():
+    print('start')
     sessions = DbSessions(secret=env)
     Base.metadata.create_all(sessions.local_engine)
     Base.metadata.create_all(sessions.ssh_engine)
@@ -71,4 +74,8 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except Exception as e:
+        traceback.print_exc()
+        sys.exit(1)
