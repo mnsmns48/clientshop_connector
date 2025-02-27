@@ -32,7 +32,7 @@ def get_client_activity(session: Session) -> Sequence[Row[Any]]:
 
 
 @retry(BaseSSHTunnelForwarderError, tries=5000, delay=30)
-def update_data(session: Session, table: Type[StockTable], data: list) -> bool:
+def update_data(session: Session, table: Type[StockTable], data: list):
     temp_data = dict()
     for line in data:
         temp_data.update({line['product_code']: int(line['quantity'])})

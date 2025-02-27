@@ -7,6 +7,7 @@ from env_config import env
 from firebird_func import firebird_data, get_fdb_activity
 from model import StockTable, Activity, Base
 from posgres_func import truncate_table, upload_data, get_client_activity, update_data
+from utils import notify_via_telegram
 
 
 @contextmanager
@@ -38,12 +39,6 @@ def ciclyc_update(time_cycle: int, sessions: DbSessions, already_refreshed: bool
     def signal_handler(sig, frame):
         raise SystemExit
 
-    def sale_info(sale_data: list) -> str:
-        result = str()
-        for sale in sale_data:
-            result += f"{sale['product']} {sale['quantity']}шт {sale['sum_']} ₽ {'-С-' if sale['noncash'] else ''}\n"
-        return result
-
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
     with managed_sessions(sessions) as (local_session, ssh_session):
@@ -55,7 +50,7 @@ def ciclyc_update(time_cycle: int, sessions: DbSessions, already_refreshed: bool
                 inserted_data = fdb_activity[-difference:]
                 upload_data(session=ssh_session, table=Activity, data=inserted_data)
                 upload_data(session=local_session, table=Activity, data=inserted_data)
-                print('Продажа:', sale_info(inserted_data))
+                notify_via_telegram(bot=env.tg_bot, chat=env.chat_id, sale_data=inserted_data)
                 if not already_refreshed:
                     update_data(session=ssh_session, table=StockTable, data=inserted_data)
                     update_data(session=ssh_session, table=StockTable, data=inserted_data)
@@ -68,6 +63,7 @@ def main():
     Base.metadata.create_all(sessions.local_engine)
     Base.metadata.create_all(sessions.ssh_engine)
     refreshed = refresh_table_data(sessions=sessions)
+
     ciclyc_update(time_cycle=60, sessions=sessions, already_refreshed=refreshed)
 
 
