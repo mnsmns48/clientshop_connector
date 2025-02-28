@@ -17,7 +17,7 @@ def managed_sessions(sessions):
 def notify_via_telegram(bot: str, chat: int, sale_data: list, current_qty: dict) -> bool:
     text = str()
     for sale in sale_data:
-        text += (f"{'Возврат: ' if sale['return_'] else 'Продажа:'} "
+        text += (f"{'В!: ' if sale['return_'] else 'П-:'} "
                  f"{sale['product']} "
                  f"{sale['quantity']} шт "
                  f"{int(sale['sum_'])} ₽ "
