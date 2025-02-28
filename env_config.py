@@ -3,6 +3,23 @@ from environs import Env
 
 
 @dataclass
+class Imports:
+    includes: tuple
+    excludes: tuple
+    description_items: tuple
+
+
+def load_imports(path: str):
+    env_data = Env()
+    env_data.read_env(path=path)
+    return Imports(
+        includes=tuple(item.replace('\n', '').strip() for item in env_data.list("INCLUDES")),
+        excludes=tuple(item.replace('\n', '').strip() for item in env_data.list("EXCLUDES")),
+        description_items=tuple(item.replace('\n', '').strip() for item in env_data.list("DESCRIPTION_ITEMS")),
+    )
+
+
+@dataclass
 class Environs:
     ssh_host: str
     ssh_port: int
@@ -27,7 +44,7 @@ class Environs:
 
 def load_environs(path: str):
     env_data = Env()
-    env_data.read_env()
+    env_data.read_env(path=path)
     return Environs(
         ssh_host=env_data.str("SSH_HOST"),
         ssh_port=env_data.int("SSH_PORT"),
@@ -52,4 +69,5 @@ def load_environs(path: str):
     )
 
 
-env = load_environs('..env')
+env = load_environs('.env')
+imports = load_imports('import_settings_.env')

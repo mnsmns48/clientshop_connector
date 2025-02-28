@@ -54,11 +54,11 @@ def ciclyc_update(time_cycle: int, sessions: DbSessions, already_refreshed: bool
 def main():
     print('start')
     sessions = DbSessions(secret=env)
-    # Base.metadata.create_all(sessions.local_engine)
-    # Base.metadata.create_all(sessions.ssh_engine)
+    Base.metadata.create_all(sessions.local_engine)
+    Base.metadata.create_all(sessions.ssh_engine)
     refreshed = refresh_table_data(sessions=sessions)
     # addon_desc()
-    # ciclyc_update(time_cycle=60, sessions=sessions, already_refreshed=refreshed)
+    ciclyc_update(time_cycle=60, sessions=sessions, already_refreshed=refreshed)
 
 
 if __name__ == '__main__':

@@ -1,10 +1,10 @@
-from config_import_ import include_path, exclude_path
+from env_config import imports
 from engine import fdb_connection
 
 
 def firebird_data() -> list:
-    folders: dict = get_folders(include=include_path, exclude=exclude_path)
-    final_folders: tuple = get_final_folders(include=include_path, exclude=exclude_path)
+    folders: dict = get_folders(include=imports.includes, exclude=imports.excludes)
+    final_folders: tuple = get_final_folders(include=imports.includes, exclude=imports.excludes)
     products: dict = get_product(folders=folders['folders'])
     to_del = list()
     for p in final_folders:

@@ -17,13 +17,15 @@ def managed_sessions(sessions):
 def notify_via_telegram(bot: str, chat: int, sale_data: list, current_qty: dict) -> bool:
     text = str()
     for sale in sale_data:
-        text += (f"{'В!: ' if sale['return_'] else 'П-:'} "
+        text += (f"{'В!!!..' if sale['return_'] else 'П..'}"
                  f"{sale['product']} "
                  f"{sale['quantity']} шт "
                  f"{int(sale['sum_'])} ₽ "
-                 f"{'-С-' if sale['noncash'] else ''} ")
+                 f"{'-С-' if sale['noncash'] else ''}")
         if current_qty.get(sale['product_code']):
-            text += f": {current_qty.get(sale['product_code'])}\n"
+            text += f":{current_qty.get(sale['product_code'])}\n"
+        else:
+            text += '\n'
     print(text)
     url = f'https://api.telegram.org/bot{bot}/sendMessage'
     context = {'chat_id': str(chat), 'text': text}
@@ -35,3 +37,4 @@ def notify_via_telegram(bot: str, chat: int, sale_data: list, current_qty: dict)
             return False
     except Exception as e:
         return False
+
