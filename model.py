@@ -1,5 +1,12 @@
-from sqlalchemy import SmallInteger, TIMESTAMP, DateTime
+from datetime import datetime
+from typing import Annotated
+
+from sqlalchemy import SmallInteger, TIMESTAMP, DateTime, func
+from sqlalchemy.dialects.postgresql import JSON
 from sqlalchemy.orm import DeclarativeBase, declared_attr, Mapped, mapped_column
+
+datetime_obj = Annotated[datetime, mapped_column(DateTime(timezone=False), server_default=func.now())]
+info_obj = Annotated[dict, mapped_column(type_=JSON)]
 
 
 class Base(DeclarativeBase):
@@ -29,3 +36,12 @@ class Activity(Base):
     sum_: Mapped[float]
     noncash: Mapped[bool]
     return_: Mapped[bool]
+
+
+class Descriptions(Base):
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    source_code: Mapped[int]
+    name: Mapped[str]
+    description_id: Mapped[int]
+    create: Mapped[datetime] = mapped_column(DateTime(timezone=False))
+    update: Mapped[datetime_obj]

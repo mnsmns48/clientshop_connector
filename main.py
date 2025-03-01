@@ -8,17 +8,17 @@ from env_config import env
 from firebird_func import firebird_data, get_fdb_activity
 from model import StockTable, Activity, Base
 from posgres_func import truncate_table, upload_data, get_client_activity, update_data
-from temp_fdb import fdbdata
 from utils import notify_via_telegram, managed_sessions
 
 
 def refresh_table_data(sessions: DbSessions) -> bool:
     from_firebird: list = firebird_data()
     print('Данные из Firebird получены')
-    for session_factory in [sessions.local, sessions.ssh]:
-        with session_factory() as session:
-            truncate_table(session=session, table=StockTable.__table__)
-            upload_data(session=session, table=StockTable, data=from_firebird)
+    print(from_firebird)
+    # for session_factory in [sessions.local, sessions.ssh]:
+    #     with session_factory() as session:
+    #         truncate_table(session=session, table=StockTable.__table__)
+    #         upload_data(session=session, table=StockTable, data=from_firebird)
     print('Таблицы наличия обновлены')
     return True
 
@@ -58,7 +58,7 @@ def main():
     Base.metadata.create_all(sessions.ssh_engine)
     refreshed = refresh_table_data(sessions=sessions)
     # addon_desc()
-    ciclyc_update(time_cycle=60, sessions=sessions, already_refreshed=refreshed)
+    # ciclyc_update(time_cycle=60, sessions=sessions, already_refreshed=refreshed)
 
 
 if __name__ == '__main__':

@@ -1,6 +1,5 @@
-from contextlib import contextmanager
-
 import requests
+from contextlib import contextmanager
 
 
 @contextmanager
