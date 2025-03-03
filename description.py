@@ -1,5 +1,7 @@
-from temp_fdb import fdbdata
+from crud_posgres_func import with_description_products
+from engine import DbSessions
 from env_config import imports
+from utils import managed_sessions
 
 
 def get_codes_for_desc(data, category_name):
@@ -19,15 +21,17 @@ def get_codes_for_desc(data, category_name):
                         {product_item['code']: product_item['name']}
                     )
                 find_codes(product_item['code'])
-
     find_codes(category_code)
     return result
 
 
-def addon_desc():
-    result = dict()
+def addon_desc_from_dtube(sessions: DbSessions, data: list):
+    descriptioned = dict()
     for cat in imports.description_items:
-        result.update(get_codes_for_desc(fdbdata, cat))
-    print(result)
-
-addon_desc()
+        descriptioned.update(get_codes_for_desc(data, cat))
+    with managed_sessions(sessions) as (local_session, ssh_session):
+        not_desc_array = with_description_products(session=local_session, for_description=descriptioned)
+    for key in not_desc_array:
+        if key in descriptioned:
+            del descriptioned[key]
+    print(descriptioned)

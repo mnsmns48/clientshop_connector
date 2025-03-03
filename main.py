@@ -3,24 +3,24 @@ import time
 import signal
 import traceback
 
+from description import addon_desc_from_dtube
 from engine import DbSessions
 from env_config import env
 from firebird_func import firebird_data, get_fdb_activity
 from model import StockTable, Activity, Base
-from posgres_func import truncate_table, upload_data, get_client_activity, update_data
+from crud_posgres_func import truncate_table, upload_data, get_client_activity, update_data
 from utils import notify_via_telegram, managed_sessions
 
 
-def refresh_table_data(sessions: DbSessions) -> bool:
+def refresh_table_data(sessions: DbSessions) -> dict:
     from_firebird: list = firebird_data()
     print('Данные из Firebird получены')
-    print(from_firebird)
     # for session_factory in [sessions.local, sessions.ssh]:
     #     with session_factory() as session:
     #         truncate_table(session=session, table=StockTable.__table__)
     #         upload_data(session=session, table=StockTable, data=from_firebird)
-    print('Таблицы наличия обновлены')
-    return True
+    # print('Таблицы наличия обновлены')
+    return {'from_firebird': from_firebird, 'status': True}
 
 
 def ciclyc_update(time_cycle: int, sessions: DbSessions, already_refreshed: bool):
@@ -40,13 +40,10 @@ def ciclyc_update(time_cycle: int, sessions: DbSessions, already_refreshed: bool
                 inserted_data = fdb_activity[-difference:]
                 upload_data(session=ssh_session, table=Activity, data=inserted_data)
                 upload_data(session=local_session, table=Activity, data=inserted_data)
-                if not already_refreshed:
+                if already_refreshed is True:
                     update_data(session=ssh_session, table=StockTable, data=inserted_data)
                     current_qty: dict = update_data(session=local_session, table=StockTable, data=inserted_data)
-                    notify_via_telegram(bot=env.tg_bot,
-                                        chat=env.chat_id,
-                                        sale_data=inserted_data,
-                                        current_qty=current_qty)
+                    notify_via_telegram(bot=env.tg_bot, chat=env.chat_id, sale_data=inserted_data, current_qty=current_qty)
             already_refreshed = False
             time.sleep(time_cycle)
 
@@ -57,8 +54,8 @@ def main():
     Base.metadata.create_all(sessions.local_engine)
     Base.metadata.create_all(sessions.ssh_engine)
     refreshed = refresh_table_data(sessions=sessions)
-    # addon_desc()
-    # ciclyc_update(time_cycle=60, sessions=sessions, already_refreshed=refreshed)
+    addon_desc_from_dtube(sessions=sessions, data=refreshed['from_firebird'])
+    # ciclyc_update(time_cycle=60, sessions=sessions, already_refreshed=refreshed['status'])
 
 
 if __name__ == '__main__':
