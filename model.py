@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Annotated, Optional, List
 
 from sqlalchemy import SmallInteger, TIMESTAMP, DateTime, func, UniqueConstraint, Index, Computed, text, event, \
-    ForeignKey, Table, Column, Integer
+    ForeignKey, Table, Column, Integer, String
 from sqlalchemy.dialects.postgresql import JSON, TSVECTOR
 from sqlalchemy.orm import DeclarativeBase, declared_attr, Mapped, mapped_column, relationship
 
@@ -24,6 +24,7 @@ product_description_association_table = Table(
     Column('id', Integer, primary_key=True),
     Column("product_id", ForeignKey("stocktable.code")),
     Column("description_id", ForeignKey("digitaltube.id")),
+    Column('source', String(30), nullable=True),
     UniqueConstraint('product_id', 'description_id', name="idx_unique_product_description")
 )
 
