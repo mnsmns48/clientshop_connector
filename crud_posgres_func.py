@@ -2,20 +2,24 @@ from datetime import datetime
 from typing import Type, Any, Sequence, Literal
 
 from retry import retry
-from sqlalchemy import text, FromClause, func, select, Row, delete, update
+from sqlalchemy import text, func, select, Row, delete, update
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
-from sqlalchemy.sql.operators import contains
 from sshtunnel import BaseSSHTunnelForwarderError
 
-from model import StockTable, Activity, Base, product_description_association_table, DigitalTube
+from model import StockTable, Activity, Base
 
 
 @retry(BaseSSHTunnelForwarderError, tries=5000, delay=30)
-def truncate_table(session: Session, table: FromClause) -> None:
-    stmt = f"truncate table {table}"
-    session.execute(text(stmt))
-    session.commit()
+def truncate_stocktable(session: Session) -> None:
+    stmt = """TRUNCATE TABLE public.stocktable"""
+    try:
+        session.execute(text(stmt))
+        session.commit()
+    except SQLAlchemyError as e:
+        session.rollback()
+        raise e
 
 
 @retry(BaseSSHTunnelForwarderError, tries=5000, delay=30)
@@ -55,15 +59,3 @@ def update_data(session: Session, table: Type[StockTable], data: list) -> dict:
             if response:
                 result[line.code] = current_amount
     return result
-
-
-def with_description_products(session: Session, for_description: dict):
-    array_ids = tuple(for_description.keys())
-    query = (
-        select(StockTable.code).filter(StockTable.code.in_(array_ids)).distinct()
-        .join(product_description_association_table,
-              StockTable.code == product_description_association_table.c.product_id)
-        .join(DigitalTube, product_description_association_table.c.description_id == DigitalTube.id)
-    )
-    result = session.execute(query)
-    return [item[0] for item in result.fetchall()]

@@ -4,3 +4,4 @@
 /.git/
 /.idea/
 /import_settings_.env
+__pycache__/
