@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import requests
 from contextlib import contextmanager
 
@@ -26,7 +28,7 @@ def notify_via_telegram(bot: str, chat: int, sale_data: list, current_qty: dict)
             text += f":{current_qty.get(sale['product_code'])}\n"
         else:
             text += '\n'
-    print(text)
+    print(f'{datetime.now().strftime("%H:%M:%S")}', text)
     url = f'https://api.telegram.org/bot{bot}/sendMessage'
     context = {'chat_id': str(chat), 'text': text}
     try:

@@ -1,5 +1,6 @@
 import json
 import time
+from datetime import datetime
 
 import requests
 
@@ -30,19 +31,19 @@ def addon_desc_from_dtube(firebird_data: list) -> dict:
     response = requests.get(env.descs_server, timeout=10)
     if response.status_code == 200:
         time.sleep(1)
-        print('Сервер с описанием товаров доступен')
+        print(f'{datetime.now().strftime("%H:%M:%S")} Сервер с описанием товаров доступен')
         descriptioned = list()
         for cat in imports.description_items:
             descriptioned += get_codes_for_desc(firebird_data, cat)
         result = requests.post(f'{env.descs_server}/get_many/', timeout=10, json={"items": descriptioned})
         if result.status_code == 200:
-            print('Описания получены')
+            print(f'{datetime.now().strftime("%H:%M:%S")} Описания получены')
             data = json.loads(result.text)
             difference = list(set(descriptioned) - set(data.keys()))
             if difference:
-                print('Описание не добавлено для', difference)
+                print(f'{datetime.now().strftime("%H:%M:%S")} Описание не добавлено для', difference)
             else:
-                print('Все описания успешно добавлены')
+                print(f'{datetime.now().strftime("%H:%M:%S")} Все описания успешно добавлены')
             for line in firebird_data:
                 if line['name'] in data.keys():
                     data_obj = data.get(line['name'])
@@ -51,6 +52,6 @@ def addon_desc_from_dtube(firebird_data: list) -> dict:
                         line['info'].update({'pros_cons': data_obj['pros_cons']})
             return {'status': True, 'data': firebird_data}
         else:
-            print('Неудачное получение описания. Ошибка', result.status_code)
-    print('Error! Сервер с описанием не отвечает', response.status_code)
+            print(f'{datetime.now().strftime("%H:%M:%S")} Неудачное получение описания. Ошибка', result.status_code)
+    print(f'{datetime.now().strftime("%H:%M:%S")} Error! Сервер с описанием не отвечает', response.status_code)
     return {'status': False}

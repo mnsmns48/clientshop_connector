@@ -1,5 +1,6 @@
 import signal
 import time
+from datetime import datetime
 
 from crud_posgres_func import truncate_stocktable, upload_data, get_client_activity, update_data
 from description import addon_desc_from_dtube
@@ -12,19 +13,19 @@ from utils import managed_sessions, notify_via_telegram
 
 def refresh_table_data(sessions: DbSessions) -> dict:
     from_firebird_only: list = firebird_data()
-    print('Данные из ClientShop получены')
+    print(f'{datetime.now().strftime("%H:%M:%S")} Данные из ClientShop получены')
     from_firebird_with_desc: dict = addon_desc_from_dtube(firebird_data=from_firebird_only)
     table_data = from_firebird_with_desc.get('data') if from_firebird_with_desc['status'] is True else from_firebird_only
     for session_factory in [sessions.local, sessions.ssh]:
         with session_factory() as session:
             truncate_stocktable(session=session)
             upload_data(session=session, table=StockTable, data=table_data)
-    print('Таблицы наличия обновлены')
+    print(f'{datetime.now().strftime("%H:%M:%S")} Таблицы наличия обновлены')
     return {'from_firebird': table_data, 'status': True}
 
 
 def ciclyc_update(time_cycle: int, sessions: DbSessions, already_refreshed: bool):
-    print('Ожидаю продажи')
+    print(f'{datetime.now().strftime("%H:%M:%S")} Ожидаю продажи')
 
     def signal_handler(sig, frame):
         raise SystemExit

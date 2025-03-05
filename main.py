@@ -1,5 +1,6 @@
 import sys
 import traceback
+from datetime import datetime
 
 from core import refresh_table_data, ciclyc_update
 from engine import DbSessions
@@ -8,7 +9,7 @@ from model import Base
 
 
 def main():
-    print('start')
+    print(f'{datetime.now().strftime("%H:%M:%S")} start')
     sessions = DbSessions(secret=env)
     Base.metadata.create_all(sessions.local_engine)
     Base.metadata.create_all(sessions.ssh_engine)
