@@ -24,6 +24,7 @@ class StockTable(Base):
     name: Mapped[str]
     quantity: Mapped[int] = mapped_column(nullable=True)
     price: Mapped[int] = mapped_column(nullable=True)
+    info: Mapped[dict | None ] = mapped_column(type_=JSON)
 
 
 class Activity(Base):

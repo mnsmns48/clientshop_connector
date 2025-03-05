@@ -40,6 +40,7 @@ class Environs:
     local_db_password: str
     tg_bot: str
     chat_id: int
+    descs_server: str
 
 
 def load_environs(path: str):
@@ -65,7 +66,7 @@ def load_environs(path: str):
         local_db_password=env_data.str("LOCAL_DB_PASSWORD"),
         tg_bot=env_data.str("TG_BOT"),
         chat_id=env_data.int("CHAT_ID"),
-
+        descs_server=env_data.str("DESCRIPTION_URL")
     )
 
 

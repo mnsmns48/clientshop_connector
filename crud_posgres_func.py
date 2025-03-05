@@ -8,6 +8,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from sshtunnel import BaseSSHTunnelForwarderError
 
+from env_config import env
 from model import StockTable, Activity, Base
 
 
@@ -48,14 +49,16 @@ def update_data(session: Session, table: Type[StockTable], data: list) -> dict:
         if current_amount == 0:
             session.execute(delete(table).where(table.code == line.code))
             session.commit()
-            print(f"Удаляю проданную позицию из наличия: {line.code} {line.name}")
+            if session.bind.engine.url.port != env.local_db_port:
+                print(f"Удаляю проданную позицию из наличия: {line.code} {line.name}")
             if response:
                 result[line.code] = 0
         else:
             session.execute(update(table).where(table.code == line.code).values(quantity=current_amount))
             session.commit()
-            print(f"Меняю количество товара на сайте:\n"
-                  f"{line.name}\nБыло {current_amount + data_qty[line.code]} шт. -> стало {current_amount} шт.\n")
+            if session.bind.engine.url.port != env.local_db_port:
+                print(f"Меняю количество товара на сайте: "
+                      f"<-{line.name}-> Было {current_amount + data_qty[line.code]} шт. -> стало {current_amount} шт.\n")
             if response:
                 result[line.code] = current_amount
     return result

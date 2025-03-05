@@ -13,7 +13,6 @@ def main():
     Base.metadata.create_all(sessions.local_engine)
     Base.metadata.create_all(sessions.ssh_engine)
     refreshed = refresh_table_data(sessions=sessions)
-    # addon_desc_from_dtube(sessions=sessions, data=refreshed['from_firebird'])
     ciclyc_update(time_cycle=60, sessions=sessions, already_refreshed=refreshed['status'])
 
 
