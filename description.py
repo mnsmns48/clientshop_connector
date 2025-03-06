@@ -46,10 +46,7 @@ def addon_desc_from_dtube(firebird_data: list) -> dict:
                 print(f'{datetime.now().strftime("%H:%M:%S")} Все описания успешно добавлены')
             for line in firebird_data:
                 if line['name'] in data.keys():
-                    data_obj = data.get(line['name'])
-                    line['info'] = {'info': data_obj['info']}
-                    if data_obj['pros_cons']:
-                        line['info'].update({'pros_cons': data_obj['pros_cons']})
+                    line['info']= data.get(line['name'])
             return {'status': True, 'data': firebird_data}
         else:
             print(f'{datetime.now().strftime("%H:%M:%S")} Неудачное получение описания. Ошибка', result.status_code)
