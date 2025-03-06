@@ -15,7 +15,8 @@ def refresh_table_data(sessions: DbSessions) -> dict:
     from_firebird_only: list = firebird_data()
     print(f'{datetime.now().strftime("%H:%M:%S")} Данные из ClientShop получены')
     from_firebird_with_desc: dict = addon_desc_from_dtube(firebird_data=from_firebird_only)
-    table_data = from_firebird_with_desc.get('data') if from_firebird_with_desc['status'] is True else from_firebird_only
+    table_data = from_firebird_with_desc.get('data') if from_firebird_with_desc[
+                                                            'status'] is True else from_firebird_only
     for session_factory in [sessions.local, sessions.ssh]:
         with session_factory() as session:
             truncate_stocktable(session=session)
@@ -34,7 +35,7 @@ def ciclyc_update(time_cycle: int, sessions: DbSessions, already_refreshed: bool
     signal.signal(signal.SIGTERM, signal_handler)
     with managed_sessions(sessions) as (local_session, ssh_session):
         while True:
-            data_client = get_client_activity(session=ssh_session)
+            data_client = get_client_activity(session=local_session)
             fdb_activity = get_fdb_activity()
             difference = len(fdb_activity) - len(data_client)
             if difference:
@@ -44,6 +45,7 @@ def ciclyc_update(time_cycle: int, sessions: DbSessions, already_refreshed: bool
                 if already_refreshed is False:
                     update_data(session=ssh_session, table=StockTable, data=inserted_data)
                     current_qty: dict = update_data(session=local_session, table=StockTable, data=inserted_data)
-                    notify_via_telegram(bot=env.tg_bot, chat=env.chat_id, sale_data=inserted_data, current_qty=current_qty)
+                    notify_via_telegram(bot=env.tg_bot, chat=env.chat_id, sale_data=inserted_data,
+                                        current_qty=current_qty)
             already_refreshed = False
             time.sleep(time_cycle)
