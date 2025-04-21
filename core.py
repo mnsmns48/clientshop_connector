@@ -18,15 +18,15 @@ def refresh_table_data(sessions: DbSessions) -> dict:
     from_firebird_only: list = firebird_data()
     print(f'{datetime.now().strftime("%H:%M:%S")} Данные из ClientShop получены')
     from_firebird_with_desc: dict = addon_desc_from_dtube(firebird_data=from_firebird_only)
-    table_data = from_firebird_with_desc.get('data') if from_firebird_with_desc[
-                                                            'status'] is True else from_firebird_only
+    table_data = from_firebird_with_desc.get('data') \
+        if from_firebird_with_desc['status'] is True else from_firebird_only
     for session_factory in [sessions.get_local_session, sessions.get_ssh_session]:
         try:
             with session_factory() as session:
                 truncate_stocktable(session=session)
                 upload_data(session=session, table=StockTable, data=table_data)
         except Exception as e:
-            print(f"Ошибка при обновлении данных тут: {e}")
+            print(f"Ошибка при обновлении данных при первичном обновлении: {e}")
             raise
     print(f'{datetime.now().strftime("%H:%M:%S")} Таблицы наличия обновлены')
     return {'from_firebird': table_data, 'status': True}
@@ -59,5 +59,5 @@ def ciclyc_update(time_cycle: int, sessions: DbSessions, already_refreshed: bool
                 already_refreshed = False
             time.sleep(time_cycle)
         except Exception as e:
-            print(f"Ошибка в цикле обновления здесь: {e}")
+            print(f"Ошибка в цикле обновления при цикле: {e}")
             raise
