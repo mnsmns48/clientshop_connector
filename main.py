@@ -11,8 +11,6 @@ from model import Base
 def main():
     print(f'{datetime.now().strftime("%H:%M:%S")} start')
     sessions = DbSessions(secret=env)
-    Base.metadata.create_all(sessions.local_engine)
-    Base.metadata.create_all(sessions.ssh_engine)
     refreshed = refresh_table_data(sessions=sessions)
     ciclyc_update(time_cycle=60, sessions=sessions, already_refreshed=refreshed['status'])
 

@@ -1,4 +1,7 @@
+from contextlib import contextmanager
+
 import fdb
+from tenacity import retry, stop_after_attempt, wait_exponential
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sshtunnel import SSHTunnelForwarder
@@ -6,6 +9,7 @@ from sshtunnel import SSHTunnelForwarder
 from env_config import Environs, env
 
 
+@retry(stop=stop_after_attempt(500), wait=wait_exponential(multiplier=60, min=60, max=60))
 def create_ssh_tunnel() -> SSHTunnelForwarder:
     tunnel = SSHTunnelForwarder(
         ssh_address_or_host=(env.ssh_host, env.ssh_port),
@@ -18,6 +22,7 @@ def create_ssh_tunnel() -> SSHTunnelForwarder:
 
 class DbSessions:
     def __init__(self, secret: Environs):
+        self.secret = secret
         self.local_engine_line = (f'postgresql+psycopg2://'
                                   f'{secret.local_db_username}:'
                                   f'{secret.local_db_password}@'
@@ -25,15 +30,28 @@ class DbSessions:
                                   f'{secret.local_db_port}/'
                                   f'{secret.local_database}')
         self.local_engine = create_engine(self.local_engine_line)
-        self.local = sessionmaker(bind=self.local_engine)
+        self.local_session_maker = sessionmaker(bind=self.local_engine)
+
+    @contextmanager
+    def get_ssh_session(self):
         tunnel = create_ssh_tunnel()
-        self.ssh_engine_line = (f'postgresql+psycopg2://'
-                                f'{secret.ssh_db_username}:'
-                                f'{secret.ssh_db_password}@'
-                                f'{secret.ssh_db_host}:'
-                                f'{tunnel.local_bind_port}/'
-                                f'{secret.ssh_database}')
-        self.ssh_engine = create_engine(self.ssh_engine_line)
-        self.ssh = sessionmaker(self.ssh_engine)
+        try:
+            ssh_engine_line = (f'postgresql+psycopg2://'
+                               f'{self.secret.ssh_db_username}:'
+                               f'{self.secret.ssh_db_password}@'
+                               f'localhost:{tunnel.local_bind_port}/'
+                               f'{self.secret.ssh_database}')
+            ssh_engine = create_engine(ssh_engine_line)
+            ssh_session_maker = sessionmaker(bind=ssh_engine)
+            with ssh_session_maker() as session:
+                yield session
+        finally:
+            tunnel.stop()
+
+    @contextmanager
+    def get_local_session(self):
+        with self.local_session_maker() as session:
+            yield session
+
 
 fdb_connection = fdb.connect(dsn=env.fdb_dsn, user=env.fdb_user, password=env.fdb_password)
