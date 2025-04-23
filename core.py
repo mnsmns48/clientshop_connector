@@ -42,18 +42,18 @@ def ciclyc_update(time_cycle: int, sessions: DbSessions, already_refreshed: bool
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
     try:
-        with sessions.get_local_session() as local_session, sessions.get_ssh_session() as ssh_session:
+        with sessions.get_local_session() as local_ses, sessions.get_ssh_session() as ssh_ses:
             while True:
-                data_client = get_client_activity(session=local_session)
+                data_client = get_client_activity(session=local_ses)
                 fdb_activity = get_fdb_activity()
                 difference = len(fdb_activity) - len(data_client)
                 if difference:
                     inserted_data = fdb_activity[-difference:]
-                    upload_data(session=ssh_session, table=Activity, data=inserted_data)
-                    upload_data(session=local_session, table=Activity, data=inserted_data)
+                    upload_data(session=ssh_ses, table=Activity, data=inserted_data)
+                    upload_data(session=local_ses, table=Activity, data=inserted_data)
                     if not already_refreshed:
-                        update_data(session=ssh_session, table=StockTable, data=inserted_data)
-                        current_qty: dict = update_data(session=local_session, table=StockTable, data=inserted_data)
+                        update_data(session=ssh_ses, table=StockTable, data=inserted_data)
+                        current_qty: dict = update_data(session=local_ses, table=StockTable, data=inserted_data)
                         notify_via_telegram(bot=env.tg_bot, chat=env.chat_id, sale_data=inserted_data,
                                             current_qty=current_qty)
                 already_refreshed = False

@@ -4,6 +4,7 @@ from datetime import datetime
 
 import requests
 from tenacity import retry, stop_after_attempt, wait_fixed
+from urllib3 import HTTPSConnectionPool
 
 from env_config import imports, env
 
@@ -29,10 +30,14 @@ def get_codes_for_desc(data, category_name):
 
 
 @retry(stop=stop_after_attempt(3), wait=wait_fixed(3))
-def fetch_description_items(descriptioned: list) -> dict:
-    result = requests.post(f'{env.descs_server}/get_many/', timeout=15, json={"items": descriptioned})
-    result.raise_for_status()
-    return result.json()
+def fetch_description_items(descriptioned: list) -> dict | None:
+    try:
+        result = requests.post(f'{env.descs_server}/get_many/', timeout=15, json={"items": descriptioned})
+        result.raise_for_status()
+        return result.json()
+    except HTTPSConnectionPool as e:
+        print(e)
+        raise
 
 
 def addon_desc_from_dtube(firebird_data: list) -> dict:

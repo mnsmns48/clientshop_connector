@@ -32,26 +32,21 @@ class DbSessions:
         self.local_engine = create_engine(self.local_engine_line)
         self.local_session_maker = sessionmaker(bind=self.local_engine)
 
-    @contextmanager
     def get_ssh_session(self):
         tunnel = create_ssh_tunnel()
-        try:
-            ssh_engine_line = (f'postgresql+psycopg2://'
-                               f'{self.secret.ssh_db_username}:'
-                               f'{self.secret.ssh_db_password}@'
-                               f'localhost:{tunnel.local_bind_port}/'
-                               f'{self.secret.ssh_database}')
-            ssh_engine = create_engine(ssh_engine_line)
-            ssh_session_maker = sessionmaker(bind=ssh_engine)
-            with ssh_session_maker() as session:
-                yield session
-        finally:
-            tunnel.stop()
+        ssh_engine_line = (f'postgresql+psycopg2://'
+                           f'{self.secret.ssh_db_username}:'
+                           f'{self.secret.ssh_db_password}@'
+                           f'localhost:{tunnel.local_bind_port}/'
+                           f'{self.secret.ssh_database}')
+        ssh_engine = create_engine(ssh_engine_line)
+        ssh_session_maker = sessionmaker(bind=ssh_engine)
+        session = ssh_session_maker()
+        return session
 
-    @contextmanager
     def get_local_session(self):
-        with self.local_session_maker() as session:
-            yield session
+        return self.local_session_maker()
+
 
 
 fdb_connection = fdb.connect(dsn=env.fdb_dsn, user=env.fdb_user, password=env.fdb_password)
