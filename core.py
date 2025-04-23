@@ -41,9 +41,9 @@ def ciclyc_update(time_cycle: int, sessions: DbSessions, already_refreshed: bool
 
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
-    while True:
-        try:
-            with sessions.get_local_session() as local_session, sessions.get_ssh_session() as ssh_session:
+    try:
+        with sessions.get_local_session() as local_session, sessions.get_ssh_session() as ssh_session:
+            while True:
                 data_client = get_client_activity(session=local_session)
                 fdb_activity = get_fdb_activity()
                 difference = len(fdb_activity) - len(data_client)
@@ -57,7 +57,7 @@ def ciclyc_update(time_cycle: int, sessions: DbSessions, already_refreshed: bool
                         notify_via_telegram(bot=env.tg_bot, chat=env.chat_id, sale_data=inserted_data,
                                             current_qty=current_qty)
                 already_refreshed = False
-            time.sleep(time_cycle)
-        except Exception as e:
-            print(f"Ошибка в цикле обновления при цикле: {e}")
-            raise
+                time.sleep(time_cycle)
+    except Exception as e:
+        print(f"Ошибка в цикле обновления при цикле: {e}")
+        raise
