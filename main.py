@@ -3,16 +3,13 @@ import traceback
 from datetime import datetime
 
 from core import refresh_table_data, ciclyc_update
-from engine import DbSessions
-from env_config import env
-from model import Base
+
 
 
 def main():
     print(f'{datetime.now().strftime("%H:%M:%S")} start')
-    sessions = DbSessions(secret=env)
-    refreshed = refresh_table_data(sessions=sessions)
-    ciclyc_update(time_cycle=60, sessions=sessions, already_refreshed=refreshed['status'])
+    refreshed = refresh_table_data()
+    ciclyc_update(time_cycle=60, already_refreshed=refreshed['status'])
 
 
 if __name__ == '__main__':

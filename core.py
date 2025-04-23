@@ -14,17 +14,19 @@ from utils import notify_via_telegram
 
 
 @retry(stop=stop_after_attempt(500), wait=wait_fixed(60))
-def refresh_table_data(sessions: DbSessions) -> dict:
+def refresh_table_data() -> dict:
     from_firebird_only: list = firebird_data()
     print(f'{datetime.now().strftime("%H:%M:%S")} Данные из ClientShop получены')
     from_firebird_with_desc: dict = addon_desc_from_dtube(firebird_data=from_firebird_only)
     table_data = from_firebird_with_desc.get('data') \
         if from_firebird_with_desc['status'] is True else from_firebird_only
-    for session_factory in [sessions.get_local_session, sessions.get_ssh_session]:
+    sessions = DbSessions(secret=env)
+    with sessions.get_local_session() as local_ses, sessions.get_ssh_session() as ssh_ses:
         try:
-            with session_factory() as session:
-                truncate_stocktable(session=session)
-                upload_data(session=session, table=StockTable, data=table_data)
+            truncate_stocktable(session=local_ses)
+            upload_data(session=local_ses, table=StockTable, data=table_data)
+            truncate_stocktable(session=ssh_ses)
+            upload_data(session=ssh_ses, table=StockTable, data=table_data)
         except Exception as e:
             print(f"Ошибка при обновлении данных при первичном обновлении: {e}")
             raise
@@ -33,15 +35,15 @@ def refresh_table_data(sessions: DbSessions) -> dict:
 
 
 @retry(stop=stop_after_attempt(500), wait=wait_fixed(60))
-def ciclyc_update(time_cycle: int, sessions: DbSessions, already_refreshed: bool):
+def ciclyc_update(time_cycle: int, already_refreshed: bool):
     print(f'{datetime.now().strftime("%H:%M:%S")} Ожидаю продажи')
 
     def signal_handler(sig, frame):
         raise SystemExit
 
     signal.signal(signal.SIGINT, signal_handler)
-    signal.signal(signal.SIGTERM, signal_handler)
     try:
+        sessions = DbSessions(secret=env)
         with sessions.get_local_session() as local_ses, sessions.get_ssh_session() as ssh_ses:
             while True:
                 data_client = get_client_activity(session=local_ses)

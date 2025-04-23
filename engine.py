@@ -48,5 +48,4 @@ class DbSessions:
         return self.local_session_maker()
 
 
-
 fdb_connection = fdb.connect(dsn=env.fdb_dsn, user=env.fdb_user, password=env.fdb_password)
