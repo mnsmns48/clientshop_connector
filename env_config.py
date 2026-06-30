@@ -41,6 +41,7 @@ class Environs:
     tg_bot: str
     chat_id: int
     descs_server: str
+    dtube_token: str
 
 
 def load_environs(path: str):
@@ -66,7 +67,8 @@ def load_environs(path: str):
         local_db_password=env_data.str("LOCAL_DB_PASSWORD"),
         tg_bot=env_data.str("TG_BOT"),
         chat_id=env_data.int("CHAT_ID"),
-        descs_server=env_data.str("DESCRIPTION_URL")
+        descs_server=env_data.str("DESCRIPTION_URL"),
+        dtube_token=env_data.str("DTUBE_TOKEN"),
     )
 
 

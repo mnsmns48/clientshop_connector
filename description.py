@@ -1,12 +1,23 @@
 import json
 import time
-from datetime import datetime
-
+from datetime import datetime, timezone, timedelta
+import jwt
 import requests
 from tenacity import retry, stop_after_attempt, wait_fixed
 from urllib3 import HTTPSConnectionPool
 
 from env_config import imports, env
+
+
+def create_dtube_token() -> str:
+    now = datetime.now(timezone.utc)
+    payload = {"service": "clientshop_connector",
+               "iss": "clientshop_connector",
+               "sub": f"clientshop_connector->digitaltube",
+               "iat": now,
+               "exp": now + timedelta(minutes=5)}
+
+    return jwt.encode(payload, env.dtube_token, algorithm="HS256")
 
 
 def get_codes_for_desc(data, category_name):
@@ -32,9 +43,17 @@ def get_codes_for_desc(data, category_name):
 @retry(stop=stop_after_attempt(3), wait=wait_fixed(3))
 def fetch_description_items(descriptioned: list) -> dict | None:
     try:
-        result = requests.post(f'{env.descs_server}/get_many/', timeout=15, json={"items": descriptioned})
+        token = create_dtube_token()
+        headers = {"Authorization": f"Bearer {token}",
+                   "Content-Type": "application/json"}
+
+        result = requests.post(f"{env.descs_server}/get_many/",
+                               timeout=15,
+                               json={"items": descriptioned},
+                               headers=headers)
         result.raise_for_status()
         return result.json()
+
     except HTTPSConnectionPool as e:
         print(e)
         raise
